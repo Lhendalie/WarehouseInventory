@@ -1,0 +1,80 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="top-bar">
+    <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Overview of inventory metrics</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-label">Products</div>
+            <p class="kpi-value">@Model.TotalProducts</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-label">Warehouses</div>
+            <p class="kpi-value">@Model.TotalWarehouses</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-label">Total Stock</div>
+            <p class="kpi-value">@Model.TotalStock</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="kpi-label">Expiring Soon</div>
+            <p class="kpi-value">@Model.ExpiringSoon</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        Quick Actions
+    </div>
+    <div class="card-body">
+        <a href="/Products" class="btn btn-primary me-2">Add Product</a>
+        <a href="/Warehouses" class="btn btn-success me-2">Add Warehouse</a>
+        <a href="/Stock" class="btn btn-warning me-2">Stock In</a>
+        <form method="post" asp-page-handler="SendExpiryEmail" style="display:inline;">
+            <div class="d-inline-flex align-items-center">
+                <input asp-for="RecipientEmail" type="email" placeholder="Recipient email" class="form-control me-2" style="width: 250px;" />
+                <button type="submit" class="btn btn-info">Send Expiry Email</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="card" style="border-color: var(--danger);">
+        <div class="card-header" style="background-color: var(--danger); color: white;">
+            Error
+        </div>
+        <div class="card-body">
+            <p class="mb-0">@Model.ErrorMessage</p>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.EmailMessage))
+{
+    <div class="card" style="border-color: @(Model.EmailSent ? "var(--success)" : "var(--warning)");">
+        <div class="card-header" style="background-color: @(Model.EmailSent ? "var(--success)" : "var(--warning)"); color: white;">
+            @(Model.EmailSent ? "Email Sent Successfully" : "No Expiring Products")
+        </div>
+        <div class="card-body">
+            <pre style="white-space: pre-wrap; background-color: var(--background); padding: 0.75rem; border-radius: 4px; margin: 0; font-size: 0.875rem;">@Model.EmailMessage</pre>
+        </div>
+    </div>
+}

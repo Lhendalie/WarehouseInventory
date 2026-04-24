@@ -1,0 +1,208 @@
+@page
+@model WarehousesModel
+@{
+    ViewData["Title"] = "Warehouses";
+}
+
+<div class="top-bar">
+    <div>
+        <h1 class="page-title">Warehouses</h1>
+        <p class="page-subtitle">Manage your warehouse locations</p>
+    </div>
+    <div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWarehouseModal">
+            + Add Warehouse
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Warehouse List (@Model.Warehouses.Count items)</span>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Warehouses.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Address</th>
+                            <th style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var warehouse in Model.Warehouses)
+                        {
+                            var isSelected = Model.SelectedWarehouseId == warehouse.Id;
+                            <tr class="table-row-link cursor-pointer @(isSelected ? "is-selected" : string.Empty)"
+                                data-href="@Url.Page("/Warehouses/Index", new { selectedWarehouseId = warehouse.Id })">
+                                <td>
+                                    <a asp-page="./Index" asp-route-selectedWarehouseId="@warehouse.Id" class="text-decoration-none" style="color: var(--text-primary); font-weight: 600;">
+                                        @warehouse.Name
+                                    </a>
+                                </td>
+                                <td>
+                                    <a asp-page="./Index" asp-route-selectedWarehouseId="@warehouse.Id" class="text-decoration-none" style="color: var(--text-primary);">
+                                        @warehouse.Address
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button type="button"
+                                                class="btn btn-sm btn-icon-muted edit-warehouse-button"
+                                                title="Edit"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editWarehouseModal"
+                                                data-id="@warehouse.Id"
+                                                data-name="@warehouse.Name"
+                                                data-address="@warehouse.Address">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@warehouse.Id" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-icon-muted" title="Delete" onclick="return confirm('Delete this warehouse?');">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M3 6h18" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <p class="text-muted mb-0">No warehouses found. Add your first warehouse to get started.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.SelectedWarehouse != null)
+{
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Warehouse Details</h5>
+        </div>
+        <div class="card-body">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <label class="text-muted">Name</label>
+                    <div>@Model.SelectedWarehouse.Name</div>
+                </div>
+                <div class="detail-item">
+                    <label class="text-muted">Address</label>
+                    <div>@Model.SelectedWarehouse.Address</div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="button"
+                        class="btn btn-sm btn-outline-muted edit-warehouse-button"
+                        title="Edit"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editWarehouseModal"
+                        data-id="@Model.SelectedWarehouse.Id"
+                        data-name="@Model.SelectedWarehouse.Name"
+                        data-address="@Model.SelectedWarehouse.Address">
+                    Edit Warehouse
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="modal fade" id="addWarehouseModal" tabindex="-1" aria-labelledby="addWarehouseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addWarehouseModalLabel">Add Warehouse</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-page-handler="Add">
+                    <div class="mb-3">
+                        <label asp-for="NewWarehouse.Name" class="form-label">Name *</label>
+                        <input asp-for="NewWarehouse.Name" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="NewWarehouse.Address" class="form-label">Address *</label>
+                        <input asp-for="NewWarehouse.Address" class="form-control" required />
+                    </div>
+                    <div class="modal-footer px-0 pb-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Warehouse</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editWarehouseModal" tabindex="-1" aria-labelledby="editWarehouseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editWarehouseModalLabel">Edit Warehouse</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-page-handler="Edit">
+                    <input asp-for="EditWarehouse.Id" type="hidden" />
+                    <div class="mb-3">
+                        <label asp-for="EditWarehouse.Name" class="form-label">Name *</label>
+                        <input asp-for="EditWarehouse.Name" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="EditWarehouse.Address" class="form-label">Address *</label>
+                        <input asp-for="EditWarehouse.Address" class="form-control" required />
+                    </div>
+                    <div class="modal-footer px-0 pb-0">
+                        <button type="button" class="btn btn-outline-muted" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+@section Scripts {
+    <script>
+        const rows = Array.from(document.querySelectorAll('tbody tr.table-row-link'));
+
+        rows.forEach(row => {
+            row.addEventListener('click', event => {
+                if (event.target.closest('a, button, form, input, select, label')) {
+                    return;
+                }
+
+                const href = row.dataset.href;
+                if (href) {
+                    window.location.href = href;
+                }
+            });
+        });
+
+        document.querySelectorAll('.edit-warehouse-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.getElementById('EditWarehouse_Id').value = button.dataset.id || '';
+                document.getElementById('EditWarehouse_Name').value = button.dataset.name || '';
+                document.getElementById('EditWarehouse_Address').value = button.dataset.address || '';
+            });
+        });
+    </script>
+}

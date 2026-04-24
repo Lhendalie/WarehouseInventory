@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  app:
+    environment:
+      # Email Configuration (optional - for expiry warnings)
+      - EmailSettings__SmtpServer=smtp.gmail.com
+      - EmailSettings__SmtpPort=587
+      - EmailSettings__UseSsl=true
+      - EmailSettings__Username=your-email@gmail.com
+      - EmailSettings__Password=your-app-password
+      - EmailSettings__FromEmail=your-email@gmail.com
+      - EmailSettings__FromName=Warehouse Inventory System
+      
+      # Expiry Settings
+      - ExpirySettings__WarningDaysThreshold=30
+      - ExpirySettings__CheckIntervalHours=24
+      - ExpirySettings__Enabled=true

@@ -1,0 +1,576 @@
+@page
+@model ProductsModel
+@{
+    ViewData["Title"] = "Products";
+}
+
+<div class="top-bar">
+    <div>
+        <h1 class="page-title">Products</h1>
+        <p class="page-subtitle">Manage your product inventory</p>
+    </div>
+    <div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            + Add Product
+        </button>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" class="form-control" placeholder="Search products..." id="searchInput" />
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterWarehouse">
+                    <option value="">All Warehouses</option>
+                    @foreach (var warehouse in Model.AvailableWarehouses)
+                    {
+                        <option value="@warehouse">@warehouse</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterType">
+                    <option value="">All Types</option>
+                    @foreach (var type in Model.AvailableTypes)
+                    {
+                        <option value="@type">@type</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterStatus">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="filterExpiry">
+                    <option value="">Expiry Status</option>
+                    <option value="expiring">Expiring Soon</option>
+                    <option value="expired">Expired</option>
+                    <option value="none">No Expiry</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Product List (@Model.Products.Count items)</span>
+        <button type="button" class="btn btn-sm btn-outline-muted" id="resetFiltersBtn">Reset Filter</button>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Products.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Warehouse</th>
+                            <th>Type</th>
+                            <th>Condition</th>
+                            <th>Date</th>
+                            <th>Expiry</th>
+                            <th>Status</th>
+                            <th style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in Model.Products)
+                        {
+                            var daysUntilExpiry = product.ExpiryDate.HasValue
+                                ? (product.ExpiryDate.Value.Date - DateTime.UtcNow.Date).Days
+                                : (int?)null;
+                            var expiryState = !product.ExpiryDate.HasValue
+                                ? "none"
+                                : daysUntilExpiry < 0
+                                    ? "expired"
+                                    : daysUntilExpiry <= 7
+                                        ? "expiring"
+                                        : "normal";
+                            var isSelected = Model.SelectedProductId == product.Id;
+                            <tr class="table-row-link cursor-pointer @(isSelected ? "is-selected" : string.Empty)"
+                                data-href="@Url.Page("/Products/Index", new { selectedProductId = product.Id })"
+                                data-warehouse="@(product.Warehouse ?? string.Empty)"
+                                data-type="@(product.Type ?? string.Empty)"
+                                data-status="@(product.IsActive ? "active" : "inactive")"
+                                data-expiry="@expiryState">
+                                <td>
+                                    <a asp-page="./Index" asp-route-selectedProductId="@product.Id" class="text-decoration-none" style="color: var(--text-primary); font-weight: 600;">
+                                        @product.ProductCode
+                                    </a>
+                                </td>
+                                <td>
+                                    <a asp-page="./Index" asp-route-selectedProductId="@product.Id" class="text-decoration-none" style="color: var(--text-primary);">
+                                        @product.ProductName
+                                    </a>
+                                </td>
+                                <td>@product.Warehouse</td>
+                                <td>@product.Type</td>
+                                <td>@product.Condition</td>
+                                <td>@product.Date.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    @if (product.ExpiryDate.HasValue)
+                                    {
+                                        if (daysUntilExpiry < 0)
+                                        {
+                                            <span class="badge badge-soft-danger">Expired</span>
+                                        }
+                                        else if (daysUntilExpiry <= 7)
+                                        {
+                                            <span class="badge badge-soft-warning">@product.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                        }
+                                        else
+                                        {
+                                            <span>@product.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (product.IsActive)
+                                    {
+                                        <span class="badge badge-soft-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-soft-neutral">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button type="button"
+                                                class="btn btn-sm btn-icon-muted edit-product-button"
+                                                title="Edit"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editProductModal"
+                                                data-id="@product.Id"
+                                                data-code="@product.ProductCode"
+                                                data-name="@product.ProductName"
+                                                data-group="@product.Group"
+                                                data-barcode="@product.Barcode"
+                                                data-catalogue="@product.Catalogue"
+                                                data-warehouse="@product.Warehouse"
+                                                data-type="@product.Type"
+                                                data-condition="@product.Condition"
+                                                data-date="@product.Date.ToString("yyyy-MM-dd")"
+                                                data-expiry="@(product.ExpiryDate?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                                                data-active="@product.IsActive.ToString().ToLowerInvariant()">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@product.Id" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-icon-muted" title="Delete" onclick="return confirm('Delete this product?');">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M3 6h18" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <p class="text-muted mb-3">No products found</p>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                    Add Your First Product
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.SelectedProduct is not null)
+{
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Product Details</span>
+            <button type="button"
+                    class="btn btn-sm btn-outline-muted edit-product-button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#editProductModal"
+                    data-id="@Model.SelectedProduct.Id"
+                    data-code="@Model.SelectedProduct.ProductCode"
+                    data-name="@Model.SelectedProduct.ProductName"
+                    data-group="@Model.SelectedProduct.Group"
+                    data-barcode="@Model.SelectedProduct.Barcode"
+                    data-catalogue="@Model.SelectedProduct.Catalogue"
+                    data-warehouse="@Model.SelectedProduct.Warehouse"
+                    data-type="@Model.SelectedProduct.Type"
+                    data-condition="@Model.SelectedProduct.Condition"
+                    data-date="@Model.SelectedProduct.Date.ToString("yyyy-MM-dd")"
+                    data-expiry="@(Model.SelectedProduct.ExpiryDate?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                    data-active="@Model.SelectedProduct.IsActive.ToString().ToLowerInvariant()">
+                Edit Product
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Product Code</span>
+                    <span class="detail-value">@Model.SelectedProduct.ProductCode</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Product Name</span>
+                    <span class="detail-value">@Model.SelectedProduct.ProductName</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Warehouse</span>
+                    <span class="detail-value">@Model.SelectedProduct.Warehouse</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Type</span>
+                    <span class="detail-value">@Model.SelectedProduct.Type</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Condition</span>
+                    <span class="detail-value">@Model.SelectedProduct.Condition</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value">@(Model.SelectedProduct.IsActive ? "Active" : "Inactive")</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Group</span>
+                    <span class="detail-value">@Model.SelectedProduct.Group</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Barcode</span>
+                    <span class="detail-value">@Model.SelectedProduct.Barcode</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Catalogue</span>
+                    <span class="detail-value">@Model.SelectedProduct.Catalogue</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Created Date</span>
+                    <span class="detail-value">@Model.SelectedProduct.Date.ToString("yyyy-MM-dd")</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Expiry Date</span>
+                    <span class="detail-value">@(Model.SelectedProduct.ExpiryDate?.ToString("yyyy-MM-dd") ?? "-")</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Selected Record</span>
+                    <span class="detail-value">This product is currently active in the detail panel.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProductModalLabel">Add New Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-page-handler="Add">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewProduct.ProductCode" class="form-label">Product Code *</label>
+                                <input asp-for="NewProduct.ProductCode" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewProduct.ProductName" class="form-label">Product Name *</label>
+                                <input asp-for="NewProduct.ProductName" class="form-control" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewProduct.Group" class="form-label">Group</label>
+                                <input asp-for="NewProduct.Group" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewProduct.Barcode" class="form-label">Barcode</label>
+                                <input asp-for="NewProduct.Barcode" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewProduct.Warehouse" class="form-label">Warehouse</label>
+                                <input asp-for="NewProduct.Warehouse" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewProduct.Catalogue" class="form-label">Catalogue</label>
+                                <input asp-for="NewProduct.Catalogue" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewProduct.Type" class="form-label">Type</label>
+                                <input asp-for="NewProduct.Type" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewProduct.Condition" class="form-label">Condition</label>
+                                <input asp-for="NewProduct.Condition" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewProduct.Date" class="form-label">Date</label>
+                                <input asp-for="NewProduct.Date" type="date" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewProduct.ExpiryDate" class="form-label">Expiry Date</label>
+                                <input asp-for="NewProduct.ExpiryDate" type="date" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer px-0 pb-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProductModalLabel">Edit Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-page-handler="Edit">
+                    <input asp-for="EditProduct.Id" type="hidden" />
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EditProduct.ProductCode" class="form-label">Product Code *</label>
+                                <input asp-for="EditProduct.ProductCode" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EditProduct.ProductName" class="form-label">Product Name *</label>
+                                <input asp-for="EditProduct.ProductName" class="form-control" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EditProduct.Group" class="form-label">Group</label>
+                                <input asp-for="EditProduct.Group" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EditProduct.Barcode" class="form-label">Barcode</label>
+                                <input asp-for="EditProduct.Barcode" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EditProduct.Warehouse" class="form-label">Warehouse</label>
+                                <input asp-for="EditProduct.Warehouse" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EditProduct.Catalogue" class="form-label">Catalogue</label>
+                                <input asp-for="EditProduct.Catalogue" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EditProduct.Type" class="form-label">Type</label>
+                                <input asp-for="EditProduct.Type" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EditProduct.Condition" class="form-label">Condition</label>
+                                <input asp-for="EditProduct.Condition" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label asp-for="EditProduct.Date" class="form-label">Date</label>
+                                <input asp-for="EditProduct.Date" type="date" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label asp-for="EditProduct.ExpiryDate" class="form-label">Expiry Date</label>
+                                <input asp-for="EditProduct.ExpiryDate" type="date" class="form-control" id="editExpiryDate" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">No Expiry</label>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="clearExpiryDate" />
+                                    <label class="form-check-label" for="clearExpiryDate">
+                                        Remove expiry date
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label asp-for="EditProduct.IsActive" class="form-label">Status</label>
+                                <select asp-for="EditProduct.IsActive" class="form-select">
+                                    <option value="true">Active</option>
+                                    <option value="false">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer px-0 pb-0">
+                        <button type="button" class="btn btn-outline-muted" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+@section Scripts {
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const filterWarehouse = document.getElementById('filterWarehouse');
+        const filterType = document.getElementById('filterType');
+        const filterStatus = document.getElementById('filterStatus');
+        const filterExpiry = document.getElementById('filterExpiry');
+        const rows = Array.from(document.querySelectorAll('tbody tr.table-row-link'));
+
+        function applyFilters() {
+            const searchTerm = (searchInput?.value || '').toLowerCase();
+            const warehouse = filterWarehouse?.value || '';
+            const type = filterType?.value || '';
+            const status = filterStatus?.value || '';
+            const expiry = filterExpiry?.value || '';
+
+            rows.forEach(row => {
+                const rowText = row.textContent.toLowerCase();
+                const matchesSearch = !searchTerm || rowText.includes(searchTerm);
+                const matchesWarehouse = !warehouse || row.dataset.warehouse === warehouse;
+                const matchesType = !type || row.dataset.type === type;
+                const matchesStatus = !status || row.dataset.status === status;
+                const matchesExpiry = !expiry || row.dataset.expiry === expiry;
+
+                row.style.display = matchesSearch && matchesWarehouse && matchesType && matchesStatus && matchesExpiry
+                    ? ''
+                    : 'none';
+            });
+        }
+
+        [searchInput, filterWarehouse, filterType, filterStatus, filterExpiry].forEach(element => {
+            if (!element) {
+                return;
+            }
+
+            element.addEventListener('input', applyFilters);
+            element.addEventListener('change', applyFilters);
+        });
+
+        rows.forEach(row => {
+            row.addEventListener('click', event => {
+                if (event.target.closest('a, button, form, input, select, label')) {
+                    return;
+                }
+
+                const href = row.dataset.href;
+                if (href) {
+                    window.location.href = href;
+                }
+            });
+        });
+
+        document.querySelectorAll('.edit-product-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.getElementById('EditProduct_Id').value = button.dataset.id || '';
+                document.getElementById('EditProduct_ProductCode').value = button.dataset.code || '';
+                document.getElementById('EditProduct_ProductName').value = button.dataset.name || '';
+                document.getElementById('EditProduct_Group').value = button.dataset.group || '';
+                document.getElementById('EditProduct_Barcode').value = button.dataset.barcode || '';
+                document.getElementById('EditProduct_Catalogue').value = button.dataset.catalogue || '';
+                document.getElementById('EditProduct_Warehouse').value = button.dataset.warehouse || '';
+                document.getElementById('EditProduct_Type').value = button.dataset.type || '';
+                document.getElementById('EditProduct_Condition').value = button.dataset.condition || '';
+                document.getElementById('EditProduct_Date').value = button.dataset.date || '';
+                document.getElementById('EditProduct_ExpiryDate').value = button.dataset.expiry || '';
+                document.getElementById('EditProduct_IsActive').value = button.dataset.active || 'true';
+                document.getElementById('clearExpiryDate').checked = !button.dataset.expiry;
+            });
+        });
+
+        document.getElementById('clearExpiryDate').addEventListener('change', function() {
+            const expiryInput = document.getElementById('editExpiryDate');
+            if (this.checked) {
+                expiryInput.value = '';
+                expiryInput.disabled = true;
+            } else {
+                expiryInput.disabled = false;
+            }
+        });
+
+        document.getElementById('resetFiltersBtn').addEventListener('click', function() {
+            if (searchInput) searchInput.value = '';
+            if (filterWarehouse) filterWarehouse.value = '';
+            if (filterType) filterType.value = '';
+            if (filterStatus) filterStatus.value = '';
+            if (filterExpiry) filterExpiry.value = '';
+            applyFilters();
+        });
+    </script>
+}

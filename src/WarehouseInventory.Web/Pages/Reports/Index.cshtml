@@ -1,0 +1,417 @@
+@page
+@model ReportsModel
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<div class="top-bar">
+    <div>
+        <h1 class="page-title">Reports</h1>
+        <p class="page-subtitle">Inventory analytics and insights</p>
+    </div>
+    <div>
+        <form method="post" asp-page-handler="Export" style="display:inline;">
+            <input type="hidden" name="reportType" value="@Model.ReportType" />
+            <input type="hidden" name="filterDateRange" value="@Model.FilterDateRange" />
+            <input type="hidden" name="filterWarehouse" value="@Model.FilterWarehouse" />
+            <input type="hidden" name="filterType" value="@Model.FilterType" />
+            <button type="submit" class="btn btn-outline-muted">Export CSV</button>
+        </form>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card kpi-card">
+            <div class="card-body">
+                <div class="kpi-label">Total Products</div>
+                <div class="kpi-value">@Model.TotalProducts</div>
+                <div class="kpi-sub">SKUs in inventory</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card kpi-card">
+            <div class="card-body">
+                <div class="kpi-label">Total Stock</div>
+                <div class="kpi-value">@Model.TotalStock</div>
+                <div class="kpi-sub">Units across all warehouses</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card kpi-card">
+            <div class="card-body">
+                <div class="kpi-label">Low Stock Items</div>
+                <div class="kpi-value @(Model.LowStockItems > 0 ? "text-warning" : "")">@Model.LowStockItems</div>
+                <div class="kpi-sub">Items below threshold</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card kpi-card">
+            <div class="card-body">
+                <div class="kpi-label">Expiring Items</div>
+                <div class="kpi-value @(Model.ExpiringItems > 0 ? "text-danger" : "")">@Model.ExpiringItems</div>
+                <div class="kpi-sub">Expiring within 30 days</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Type Tabs -->
+<div class="card mb-4">
+    <div class="card-body">
+        <ul class="nav nav-pills mb-3" id="reportTabs">
+            <li class="nav-item">
+                <a class="nav-link @(Model.ReportType == "StockLevels" ? "active" : "")" 
+                   href="/Reports?reportType=StockLevels&filterDateRange=@Model.FilterDateRange&filterWarehouse=@Model.FilterWarehouse&filterType=@Model.FilterType">Stock Levels</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(Model.ReportType == "LowStock" ? "active" : "")" 
+                   href="/Reports?reportType=LowStock&filterDateRange=@Model.FilterDateRange&filterWarehouse=@Model.FilterWarehouse&filterType=@Model.FilterType">Low Stock</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(Model.ReportType == "ExpiryDates" ? "active" : "")" 
+                   href="/Reports?reportType=ExpiryDates&filterDateRange=@Model.FilterDateRange&filterWarehouse=@Model.FilterWarehouse&filterType=@Model.FilterType">Expiry Dates</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(Model.ReportType == "StockMovements" ? "active" : "")" 
+                   href="/Reports?reportType=StockMovements&filterDateRange=@Model.FilterDateRange&filterWarehouse=@Model.FilterWarehouse&filterType=@Model.FilterType">Stock Movements</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label text-muted">Date Range</label>
+                <select class="form-select" id="filterDateRange">
+                    <option value="">All Time</option>
+                    @if (Model.FilterDateRange == "7")
+                    {
+                        <option value="7" selected>Last 7 Days</option>
+                    }
+                    else
+                    {
+                        <option value="7">Last 7 Days</option>
+                    }
+                    @if (Model.FilterDateRange == "30")
+                    {
+                        <option value="30" selected>Last 30 Days</option>
+                    }
+                    else
+                    {
+                        <option value="30">Last 30 Days</option>
+                    }
+                    @if (Model.FilterDateRange == "90")
+                    {
+                        <option value="90" selected>Last 90 Days</option>
+                    }
+                    else
+                    {
+                        <option value="90">Last 90 Days</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted">Warehouse</label>
+                <select class="form-select" id="filterWarehouse">
+                    <option value="">All Warehouses</option>
+                    @foreach (var warehouse in Model.AvailableWarehouses)
+                    {
+                        if (warehouse == Model.FilterWarehouse)
+                        {
+                            <option value="@warehouse" selected>@warehouse</option>
+                        }
+                        else
+                        {
+                            <option value="@warehouse">@warehouse</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted">Product Type</label>
+                <select class="form-select" id="filterType">
+                    <option value="">All Types</option>
+                    @foreach (var type in Model.AvailableTypes)
+                    {
+                        if (type == Model.FilterType)
+                        {
+                            <option value="@type" selected>@type</option>
+                        }
+                        else
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Content -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>@GetReportTitle(Model.ReportType)</span>
+        <button type="button" class="btn btn-sm btn-outline-muted" id="resetFiltersBtn">Reset Filter</button>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.ReportType == "StockLevels" && Model.StockLevels.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Warehouse</th>
+                            <th>Total Products</th>
+                            <th>Total Quantity</th>
+                            <th>Average Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.StockLevels)
+                        {
+                            <tr>
+                                <td style="font-weight: 600;">@item.Warehouse</td>
+                                <td>@item.TotalProducts</td>
+                                <td>@item.TotalQuantity</td>
+                                <td>@item.AverageQuantity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (Model.ReportType == "LowStock" && Model.LowStock.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Product Code</th>
+                            <th>Product Name</th>
+                            <th>Warehouse</th>
+                            <th>Current Quantity</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.LowStock)
+                        {
+                            <tr>
+                                <td style="font-weight: 600;">@item.ProductCode</td>
+                                <td>@item.ProductName</td>
+                                <td>@item.Warehouse</td>
+                                <td>@item.CurrentQuantity</td>
+                                <td>
+                                    @if (item.Status == "Out of Stock")
+                                    {
+                                        <span class="badge badge-soft-danger">@item.Status</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-soft-warning">@item.Status</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (Model.ReportType == "ExpiryDates" && Model.ExpiryItems.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Product Code</th>
+                            <th>Product Name</th>
+                            <th>Warehouse</th>
+                            <th>Expiry Date</th>
+                            <th>Days Until Expiry</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.ExpiryItems)
+                        {
+                            <tr>
+                                <td style="font-weight: 600;">@item.ProductCode</td>
+                                <td>@item.ProductName</td>
+                                <td>@item.Warehouse</td>
+                                <td>@item.ExpiryDate.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    @if (item.DaysUntilExpiry <= 7)
+                                    {
+                                        <span class="badge badge-soft-danger">@item.DaysUntilExpiry days</span>
+                                    }
+                                    else if (item.DaysUntilExpiry <= 30)
+                                    {
+                                        <span class="badge badge-soft-warning">@item.DaysUntilExpiry days</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@item.DaysUntilExpiry days</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (Model.ReportType == "StockMovements" && Model.StockMovements.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Product Code</th>
+                            <th>Product Name</th>
+                            <th>Warehouse</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.StockMovements)
+                        {
+                            <tr>
+                                <td>@item.Date.ToString("yyyy-MM-dd")</td>
+                                <td style="font-weight: 600;">@item.ProductCode</td>
+                                <td>@item.ProductName</td>
+                                <td>@item.Warehouse</td>
+                                <td>
+                                    @if (item.Type == "Stock In")
+                                    {
+                                        <span class="badge badge-soft-success">Stock In</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-soft-danger">Stock Out</span>
+                                    }
+                                </td>
+                                <td>@item.Quantity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <p class="text-muted mb-0">No data available for this report.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+@functions {
+    public string GetReportTitle(string reportType)
+    {
+        return reportType switch
+        {
+            "StockLevels" => "Stock Levels by Warehouse",
+            "LowStock" => "Low Stock Alert",
+            "ExpiryDates" => "Expiring Products",
+            "StockMovements" => "Stock Movement History",
+            _ => "Report"
+        };
+    }
+}
+
+@section Scripts {
+    <style>
+        .kpi-card {
+            border: 1px solid var(--border-color);
+            background: var(--surface-secondary);
+        }
+        .kpi-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+        .kpi-sub {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+    </style>
+    <script>
+        const filterDateRange = document.getElementById('filterDateRange');
+        const filterWarehouse = document.getElementById('filterWarehouse');
+        const filterType = document.getElementById('filterType');
+        const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+
+        const navigationEntries = window.performance.getEntriesByType('navigation');
+        const isReload = navigationEntries.length > 0 && navigationEntries[0].type === 'reload';
+
+        if (isReload) {
+            const reloadUrl = new URL(window.location.href);
+            const currentReportType = reloadUrl.searchParams.get('reportType') || '@Model.ReportType';
+
+            reloadUrl.searchParams.set('reportType', currentReportType);
+            reloadUrl.searchParams.delete('filterDateRange');
+            reloadUrl.searchParams.delete('filterWarehouse');
+            reloadUrl.searchParams.delete('filterType');
+
+            window.location.replace(reloadUrl.toString());
+        }
+
+        function updateFilters() {
+            const url = new URL(window.location.href);
+            const reportType = url.searchParams.get('reportType') || '@Model.ReportType';
+
+            url.searchParams.set('reportType', reportType);
+
+            if (filterDateRange.value) {
+                url.searchParams.set('filterDateRange', filterDateRange.value);
+            } else {
+                url.searchParams.delete('filterDateRange');
+            }
+
+            if (filterWarehouse.value) {
+                url.searchParams.set('filterWarehouse', filterWarehouse.value);
+            } else {
+                url.searchParams.delete('filterWarehouse');
+            }
+
+            if (filterType.value) {
+                url.searchParams.set('filterType', filterType.value);
+            } else {
+                url.searchParams.delete('filterType');
+            }
+
+            window.location.href = url.toString();
+        }
+
+        filterDateRange.addEventListener('change', updateFilters);
+        filterWarehouse.addEventListener('change', updateFilters);
+        filterType.addEventListener('change', updateFilters);
+
+        resetFiltersBtn.addEventListener('click', function() {
+            filterDateRange.value = '';
+            filterWarehouse.value = '';
+            filterType.value = '';
+            updateFilters();
+        });
+    </script>
+}

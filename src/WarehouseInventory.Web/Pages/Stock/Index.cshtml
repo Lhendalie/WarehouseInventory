@@ -1,0 +1,316 @@
+@page
+@model StockModel
+@{
+    ViewData["Title"] = "Stock";
+}
+@Html.AntiForgeryToken()
+
+<div class="top-bar">
+    <div>
+        <h1 class="page-title">Stock Management</h1>
+        <p class="page-subtitle">Track and manage inventory levels</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <input type="text" class="form-control" placeholder="Search products..." id="searchInput" value="@Model.SearchTerm" />
+            </div>
+            <div class="col-md-6">
+                <select class="form-select" id="filterWarehouse">
+                    @if (string.IsNullOrEmpty(Model.FilterWarehouse))
+                    {
+                        <option value="" selected>All Warehouses</option>
+                    }
+                    else
+                    {
+                        <option value="">All Warehouses</option>
+                    }
+                    @foreach (var warehouse in Model.AvailableWarehouses)
+                    {
+                        if (warehouse == Model.FilterWarehouse)
+                        {
+                            <option value="@warehouse" selected>@warehouse</option>
+                        }
+                        else
+                        {
+                            <option value="@warehouse">@warehouse</option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Stock Levels (@Model.Stock.Count items)</span>
+        <button type="button" class="btn btn-sm btn-outline-muted" id="resetFiltersBtn">Reset Filter</button>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Stock.Any())
+        {
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Product Code</th>
+                            <th>Product Name</th>
+                            <th>Warehouse</th>
+                            <th>Quantity</th>
+                            <th style="width: 150px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var stock in Model.Stock)
+                        {
+                            <tr>
+                                <td style="font-weight: 600;">@stock.ProductCode</td>
+                                <td>@stock.ProductName</td>
+                                <td>@stock.Warehouse</td>
+                                <td>
+                                    @if (stock.Quantity == 0)
+                                    {
+                                        <span class="badge badge-soft-danger">Out of Stock</span>
+                                    }
+                                    else if (stock.Quantity < 10)
+                                    {
+                                        <span class="badge badge-soft-warning">@stock.Quantity</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@stock.Quantity</span>
+                                    }
+                                </td>
+                                <td>
+                                    <button type="button"
+                                            class="btn btn-sm btn-icon-muted edit-stock-button"
+                                            title="Edit Stock"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#stockModal"
+                                            data-id="@stock.Id"
+                                            data-product-code="@stock.ProductCode"
+                                            data-product-name="@stock.ProductName"
+                                            data-warehouse="@stock.Warehouse"
+                                            data-quantity="@stock.Quantity">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <p class="text-muted mb-0">No stock records found matching your criteria.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+<div class="modal fade" id="stockModal" tabindex="-1" aria-labelledby="stockModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stockModalLabel">Edit Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Product</label>
+                    <div id="modalProductInfo" class="fw-semibold"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Warehouse</label>
+                    <div id="modalWarehouse"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Current Quantity</label>
+                    <div id="modalCurrentQuantity" class="fw-semibold"></div>
+                </div>
+                <hr />
+                <div class="mb-3">
+                    <label class="form-label">Action</label>
+                    <select class="form-select" id="stockAction">
+                        <option value="">Select action...</option>
+                        <option value="in">Stock In</option>
+                        <option value="out">Stock Out</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="quantityInputGroup" style="display: none;">
+                    <label class="form-label" id="quantityLabel">Quantity</label>
+                    <input type="number" class="form-control" id="stockQuantity" min="1" value="1" />
+                    <small class="text-muted">Minimum quantity: 1</small>
+                </div>
+            </div>
+            <div class="modal-footer px-0 pb-0">
+                <button type="button" class="btn btn-outline-muted" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="submitStockAction">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const filterWarehouse = document.getElementById('filterWarehouse');
+        const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+        const rows = Array.from(document.querySelectorAll('tbody tr'));
+
+        const navigationEntries = window.performance.getEntriesByType('navigation');
+        const isReload = navigationEntries.length > 0 && navigationEntries[0].type === 'reload';
+
+        if (isReload) {
+            const reloadUrl = new URL(window.location.href);
+            reloadUrl.searchParams.delete('filterWarehouse');
+            reloadUrl.searchParams.delete('searchTerm');
+            window.location.replace(reloadUrl.toString());
+        }
+
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const warehouse = filterWarehouse.value;
+
+            rows.forEach(row => {
+                const productCode = row.cells[0].textContent.toLowerCase();
+                const productName = row.cells[1].textContent.toLowerCase();
+                const rowWarehouse = row.cells[2].textContent.trim();
+
+                const matchesSearch = !searchTerm || productCode.startsWith(searchTerm) || productName.startsWith(searchTerm);
+                const matchesWarehouse = !warehouse || rowWarehouse === warehouse;
+
+                row.style.display = matchesSearch && matchesWarehouse ? '' : 'none';
+            });
+        }
+
+        // Real-time search filtering
+        searchInput.addEventListener('input', function() {
+            applyFilters();
+        });
+
+        // Warehouse filter change
+        filterWarehouse.addEventListener('change', function() {
+            applyFilters();
+        });
+
+        // Reset filters
+        resetFiltersBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            filterWarehouse.value = '';
+            applyFilters();
+        });
+
+        applyFilters();
+
+        // Stock modal handling
+        const stockModal = document.getElementById('stockModal');
+        const stockActionSelect = document.getElementById('stockAction');
+        const quantityInputGroup = document.getElementById('quantityInputGroup');
+        const quantityLabel = document.getElementById('quantityLabel');
+        const stockQuantityInput = document.getElementById('stockQuantity');
+        const submitStockActionBtn = document.getElementById('submitStockAction');
+
+        let currentStockId = null;
+        let currentQuantity = 0;
+
+        document.querySelectorAll('.edit-stock-button').forEach(button => {
+            button.addEventListener('click', () => {
+                currentStockId = button.dataset.id;
+                currentQuantity = parseInt(button.dataset.quantity);
+
+                document.getElementById('modalProductInfo').textContent = `${button.dataset.productCode} - ${button.dataset.productName}`;
+                document.getElementById('modalWarehouse').textContent = button.dataset.warehouse;
+                document.getElementById('modalCurrentQuantity').textContent = button.dataset.quantity;
+
+                stockActionSelect.value = '';
+                quantityInputGroup.style.display = 'none';
+                stockQuantityInput.value = '1';
+            });
+        });
+
+        stockActionSelect.addEventListener('change', function() {
+            if (this.value === 'in') {
+                quantityLabel.textContent = 'Quantity to Add';
+                quantityInputGroup.style.display = 'block';
+            } else if (this.value === 'out') {
+                quantityLabel.textContent = 'Quantity to Remove';
+                quantityInputGroup.style.display = 'block';
+            } else {
+                quantityInputGroup.style.display = 'none';
+            }
+        });
+
+        submitStockActionBtn.addEventListener('click', function() {
+            const action = stockActionSelect.value;
+            const quantity = parseInt(stockQuantityInput.value);
+
+            if (!action) {
+                alert('Please select an action.');
+                return;
+            }
+
+            if (isNaN(quantity) || quantity < 1) {
+                alert('Quantity must be at least 1.');
+                return;
+            }
+
+            if (action === 'out' && quantity > currentQuantity) {
+                alert('Cannot dispatch more than available stock.');
+                return;
+            }
+
+            // Submit form
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = window.location.pathname + (action === 'in' ? '?handler=StockIn' : '?handler=StockOut');
+
+            // Add antiforgery token
+            const tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = '__RequestVerificationToken';
+            tokenInput.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            form.appendChild(tokenInput);
+
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'id';
+            idInput.value = currentStockId;
+            form.appendChild(idInput);
+
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'hidden';
+            quantityInput.name = 'quantity';
+            quantityInput.value = quantity;
+            form.appendChild(quantityInput);
+
+            const warehouseInput = document.createElement('input');
+            warehouseInput.type = 'hidden';
+            warehouseInput.name = 'filterWarehouse';
+            warehouseInput.value = filterWarehouse.value;
+            form.appendChild(warehouseInput);
+
+            const searchInputHidden = document.createElement('input');
+            searchInputHidden.type = 'hidden';
+            searchInputHidden.name = 'searchTerm';
+            searchInputHidden.value = searchInput.value;
+            form.appendChild(searchInputHidden);
+
+            document.body.appendChild(form);
+            form.submit();
+        });
+    </script>
+}
