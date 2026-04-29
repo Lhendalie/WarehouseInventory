@@ -1,0 +1,449 @@
+@page
+@model SettingsModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<div class="top-bar">
+    <div>
+        <h1 class="page-title">Settings</h1>
+        <p class="page-subtitle">Configure application preferences</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist">
+                    <button class="nav-link @(Model.ActiveTab == "user" ? "active" : "") text-start" id="v-pills-user-tab" data-bs-toggle="pill" data-bs-target="#v-pills-user" type="button" role="tab">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: text-bottom; margin-right: 8px;">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        User Settings
+                    </button>
+                    <button class="nav-link @(Model.ActiveTab == "products" ? "active" : "") text-start" id="v-pills-products-tab" data-bs-toggle="pill" data-bs-target="#v-pills-products" type="button" role="tab">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: text-bottom; margin-right: 8px;">
+                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="7" y1="7" x2="7.01" y2="7" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Products Settings
+                    </button>
+                    <button class="nav-link @(Model.ActiveTab == "bulk" ? "active" : "") text-start" id="v-pills-bulk-tab" data-bs-toggle="pill" data-bs-target="#v-pills-bulk" type="button" role="tab">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: text-bottom; margin-right: 8px;">
+                            <path d="M12 20h9" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Bulk Products
+                    </button>
+                    <button class="nav-link @(Model.ActiveTab == "reports" ? "active" : "") text-start" id="v-pills-reports-tab" data-bs-toggle="pill" data-bs-target="#v-pills-reports" type="button" role="tab">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: text-bottom; margin-right: 8px;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="14 2 14 8 20 8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="16" y1="13" x2="8" y2="13" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="16" y1="17" x2="8" y2="17" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="10 9 9 9 8 9" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Reports Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="tab-content" id="v-pills-tabContent">
+            <!-- User Settings -->
+            <div class="tab-pane fade @(Model.ActiveTab == "user" ? "show active" : "")" id="v-pills-user" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">User Preferences</div>
+                    <div class="card-body">
+                        <form method="post" asp-page-handler="SaveUserSettings">
+                            <div class="mb-4">
+                                <label class="form-label">Display Name</label>
+                                <input type="text" class="form-control" name="DisplayName" value="@Model.UserSettings.DisplayName" />
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-control" name="Email" value="@Model.UserSettings.Email" />
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Time Zone</label>
+                                <select class="form-select" name="TimeZone">
+                                    <option value="UTC" selected="@(Model.UserSettings.TimeZone == "UTC")">UTC</option>
+                                    <option value="America/New_York" selected="@(Model.UserSettings.TimeZone == "America/New_York")">Eastern Time (ET)</option>
+                                    <option value="America/Chicago" selected="@(Model.UserSettings.TimeZone == "America/Chicago")">Central Time (CT)</option>
+                                    <option value="America/Denver" selected="@(Model.UserSettings.TimeZone == "America/Denver")">Mountain Time (MT)</option>
+                                    <option value="America/Los_Angeles" selected="@(Model.UserSettings.TimeZone == "America/Los_Angeles")">Pacific Time (PT)</option>
+                                    <option value="Europe/London" selected="@(Model.UserSettings.TimeZone == "Europe/London")">London (GMT)</option>
+                                    <option value="Europe/Paris" selected="@(Model.UserSettings.TimeZone == "Europe/Paris")">Paris (CET)</option>
+                                    <option value="Asia/Tokyo" selected="@(Model.UserSettings.TimeZone == "Asia/Tokyo")">Tokyo (JST)</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Language</label>
+                                <select class="form-select" name="Language">
+                                    <option value="en" selected="@(Model.UserSettings.Language == "en")">English</option>
+                                    <option value="es" selected="@(Model.UserSettings.Language == "es")">Spanish</option>
+                                    <option value="fr" selected="@(Model.UserSettings.Language == "fr")">French</option>
+                                    <option value="de" selected="@(Model.UserSettings.Language == "de")">German</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">
+                                    <input type="checkbox" name="EnableEmailNotifications" checked="@Model.UserSettings.EnableEmailNotifications" />
+                                    Enable Email Notifications
+                                </label>
+                                <small class="text-muted">Receive email alerts for expiry warnings and stock changes</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save User Settings</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Security Settings</div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <label class="form-label">Session Timeout (minutes)</label>
+                            <input type="number" class="form-control" name="SessionTimeout" value="@Model.UserSettings.SessionTimeout" min="5" max="120" />
+                            <small class="text-muted">Auto-logout after inactivity</small>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <input type="checkbox" name="RequireTwoFactor" checked="@Model.UserSettings.RequireTwoFactor" />
+                                Require Two-Factor Authentication
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Settings -->
+            <div class="tab-pane fade @(Model.ActiveTab == "products" ? "show active" : "")" id="v-pills-products" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">Product Display Settings</div>
+                    <div class="card-body">
+                        <form method="post" asp-page-handler="SaveProductSettings">
+                            <div class="mb-4">
+                                <label class="form-label">Items Per Page</label>
+                                <select class="form-select" asp-for="ProductSettings.ItemsPerPage">
+                                    <option value="5">5</option>
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Column Visibility</label>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">
+                                            <input type="checkbox" asp-for="ProductSettings.ShowProductCode" />
+                                            Product Code
+                                        </label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">
+                                            <input type="checkbox" asp-for="ProductSettings.ShowProductName" />
+                                            Product Name
+                                        </label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">
+                                            <input type="checkbox" asp-for="ProductSettings.ShowWarehouse" />
+                                            Warehouse
+                                        </label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">
+                                            <input type="checkbox" asp-for="ProductSettings.ShowType" />
+                                            Type
+                                        </label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">
+                                            <input type="checkbox" asp-for="ProductSettings.ShowCondition" />
+                                            Condition
+                                        </label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">
+                                            <input type="checkbox" asp-for="ProductSettings.ShowGroup" />
+                                            Group
+                                        </label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">
+                                            <input type="checkbox" asp-for="ProductSettings.ShowDate" />
+                                            Date
+                                        </label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">
+                                            <input type="checkbox" asp-for="ProductSettings.ShowCatalogue" />
+                                            Catalogue
+                                        </label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">
+                                            <input type="checkbox" asp-for="ProductSettings.ShowStatus" />
+                                            Status
+                                        </label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">
+                                            <input type="checkbox" asp-for="ProductSettings.ShowBarcode" />
+                                            Barcode
+                                        </label>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">
+                                            <input type="checkbox" asp-for="ProductSettings.ShowExpiryDate" />
+                                            Expiry Date
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Save Product Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk Products -->
+            <div class="tab-pane fade @(Model.ActiveTab == "bulk" ? "show active" : "")" id="v-pills-bulk" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">Bulk Product Creation</div>
+                    <div class="card-body">
+                        <form method="post" asp-page-handler="BulkCreateProducts">
+                            <div class="mb-4">
+                                <label class="form-label">Common Attributes</label>
+                                <small class="text-muted">These values will be applied to all products in the bulk creation</small>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label">Warehouse</label>
+                                    <select class="form-select" name="BulkWarehouseId" required>
+                                        <option value="">-- Select Warehouse --</option>
+                                        @foreach (var warehouse in Model.Warehouses)
+                                        {
+                                            <option value="@warehouse.Id">@warehouse.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label">Product Type</label>
+                                    <select class="form-select" name="BulkProductType" required>
+                                        <option value="Raw Material">Raw Material</option>
+                                        <option value="Finished Good">Finished Good</option>
+                                        <option value="Consumable">Consumable</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label">Condition</label>
+                                    <select class="form-select" name="BulkCondition">
+                                        <option value="New">New</option>
+                                        <option value="Used">Used</option>
+                                        <option value="Refurbished">Refurbished</option>
+                                        <option value="Damaged">Damaged</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label">Group</label>
+                                    <input type="text" class="form-control" name="BulkGroup" placeholder="Optional group name" />
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">Products (one per line: Code, Name)</label>
+                                <textarea class="form-control" name="BulkProducts" id="BulkProducts" rows="10" required placeholder="PROD001, Product Name One&#10;PROD002, Product Name Two&#10;PROD003, Product Name Three"></textarea>
+                                <small class="text-muted">Enter each product on a new line with format: Code, Name</small>
+                                <div id="BulkProductsError" class="text-danger mt-1" style="display: none;"></div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label">
+                                    <input type="checkbox" name="BulkAutoGenerateBarcodes" checked />
+                                    Auto-generate Barcodes (uses Product Code)
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" id="BulkCreateButton">Create 0 Products</button>
+                        </form>
+                    </div>
+                </div>
+
+                @if (Model.BulkCreateResult != null)
+                {
+                    <div class="card mt-4">
+                        <div class="card-header">Bulk Creation Result</div>
+                        <div class="card-body">
+                            @if (Model.BulkCreateResult.Success)
+                            {
+                                <div class="alert alert-success">
+                                    <strong>Success!</strong> @Model.BulkCreateResult.CreatedCount products created successfully.
+                                </div>
+                                @if (Model.BulkCreateResult.CreatedProducts.Any())
+                                {
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Code</th>
+                                                <th>Name</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var product in Model.BulkCreateResult.CreatedProducts)
+                                            {
+                                                <tr>
+                                                    <td>@product.Code</td>
+                                                    <td>@product.Name</td>
+                                                    <td><span class="badge badge-soft-success">Created</span></td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                            }
+                            else
+                            {
+                                <div class="alert alert-danger">
+                                    <strong>Error:</strong> @Model.BulkCreateResult.ErrorMessage
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Reports Settings -->
+            <div class="tab-pane fade @(Model.ActiveTab == "reports" ? "show active" : "")" id="v-pills-reports" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">Report Preferences</div>
+                    <div class="card-body">
+                        <form method="post" asp-page-handler="SaveReportSettings">
+                            <div class="mb-4">
+                                <label class="form-label">Default Date Range</label>
+                                <select class="form-select" name="DefaultDateRange">
+                                    <option value="7" selected="@(Model.ReportSettings.DefaultDateRange == "7")">Last 7 Days</option>
+                                    <option value="30" selected="@(Model.ReportSettings.DefaultDateRange == "30")">Last 30 Days</option>
+                                    <option value="90" selected="@(Model.ReportSettings.DefaultDateRange == "90")">Last 90 Days</option>
+                                    <option value="365" selected="@(Model.ReportSettings.DefaultDateRange == "365")">Last 365 Days</option>
+                                    <option value="custom" selected="@(Model.ReportSettings.DefaultDateRange == "custom")">Custom</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Default Report Type</label>
+                                <select class="form-select" name="DefaultReportType">
+                                    <option value="StockLevels" selected="@(Model.ReportSettings.DefaultReportType == "StockLevels")">Stock Levels</option>
+                                    <option value="StockMovements" selected="@(Model.ReportSettings.DefaultReportType == "StockMovements")">Stock Movements</option>
+                                    <option value="ExpiryReport" selected="@(Model.ReportSettings.DefaultReportType == "ExpiryReport")">Expiry Report</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">
+                                    <input type="checkbox" name="IncludeZeroStock" checked="@Model.ReportSettings.IncludeZeroStock" />
+                                    Include Zero Stock Items in Reports
+                                </label>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">
+                                    <input type="checkbox" name="AutoRefreshReports" checked="@Model.ReportSettings.AutoRefreshReports" />
+                                    Auto-refresh Reports Every 5 Minutes
+                                </label>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Export Format</label>
+                                <select class="form-select" name="ExportFormat">
+                                    <option value="CSV" selected="@(Model.ReportSettings.ExportFormat == "CSV")">CSV</option>
+                                    <option value="PDF" selected="@(Model.ReportSettings.ExportFormat == "PDF")">PDF</option>
+                                    <option value="Excel" selected="@(Model.ReportSettings.ExportFormat == "Excel")">Excel</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Report Settings</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Expiry Alert Settings</div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <label class="form-label">Warning Days Threshold</label>
+                            <input type="number" class="form-control" name="WarningDaysThreshold" value="@Model.ReportSettings.WarningDaysThreshold" min="1" max="365" />
+                            <small class="text-muted">Alert when products expire within this many days</small>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <input type="checkbox" name="EnableExpiryEmails" checked="@Model.ReportSettings.EnableExpiryEmails" />
+                                Send Expiry Email Alerts
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bulkProductsTextarea = document.getElementById('BulkProducts');
+            const bulkCreateButton = document.getElementById('BulkCreateButton');
+            const bulkProductsError = document.getElementById('BulkProductsError');
+
+            if (bulkProductsTextarea && bulkCreateButton && bulkProductsError) {
+                function validateProducts() {
+                    const lines = bulkProductsTextarea.value.split('\n').filter(line => line.trim() !== '');
+                    const invalidLines = [];
+                    let validCount = 0;
+
+                    lines.forEach((line, index) => {
+                        const parts = line.split(',');
+                        if (parts.length < 2) {
+                            invalidLines.push(`Line ${index + 1}: Missing code or name`);
+                        } else {
+                            const code = parts[0].trim();
+                            const name = parts.slice(1).join(',').trim();
+                            if (!code || !name) {
+                                invalidLines.push(`Line ${index + 1}: Missing code or name`);
+                            } else {
+                                validCount++;
+                            }
+                        }
+                    });
+
+                    if (invalidLines.length > 0) {
+                        bulkProductsError.textContent = invalidLines.join('; ');
+                        bulkProductsError.style.display = 'block';
+                        bulkCreateButton.disabled = true;
+                        bulkCreateButton.textContent = 'Fix Format Errors';
+                    } else {
+                        bulkProductsError.style.display = 'none';
+                        bulkCreateButton.disabled = false;
+                        bulkCreateButton.textContent = validCount === 1 ? 'Create 1 Product' : `Create ${validCount} Products`;
+                    }
+
+                    return validCount;
+                }
+
+                // Validate on input
+                bulkProductsTextarea.addEventListener('input', validateProducts);
+
+                // Initial validation
+                validateProducts();
+            }
+        });
+    </script>
+}

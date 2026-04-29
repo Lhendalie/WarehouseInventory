@@ -129,14 +129,25 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                @if (!ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        @foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@error.ErrorMessage</div>
+                        }
+                    </div>
+                }
                 <form method="post" asp-page-handler="Add">
                     <div class="mb-3">
                         <label asp-for="NewWarehouse.Name" class="form-label">Name *</label>
-                        <input asp-for="NewWarehouse.Name" class="form-control" required />
+                        <input asp-for="NewWarehouse.Name" class="form-control" required maxlength="100" />
+                        <span asp-validation-for="NewWarehouse.Name" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
                         <label asp-for="NewWarehouse.Address" class="form-label">Address *</label>
-                        <input asp-for="NewWarehouse.Address" class="form-control" required />
+                        <input asp-for="NewWarehouse.Address" class="form-control" required maxlength="500" />
+                        <span asp-validation-for="NewWarehouse.Address" class="text-danger"></span>
                     </div>
                     <div class="modal-footer px-0 pb-0">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -156,15 +167,26 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                @if (!ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        @foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@error.ErrorMessage</div>
+                        }
+                    </div>
+                }
                 <form method="post" asp-page-handler="Edit">
                     <input asp-for="EditWarehouse.Id" type="hidden" />
                     <div class="mb-3">
                         <label asp-for="EditWarehouse.Name" class="form-label">Name *</label>
-                        <input asp-for="EditWarehouse.Name" class="form-control" required />
+                        <input asp-for="EditWarehouse.Name" class="form-control" required maxlength="100" />
+                        <span asp-validation-for="EditWarehouse.Name" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
                         <label asp-for="EditWarehouse.Address" class="form-label">Address *</label>
-                        <input asp-for="EditWarehouse.Address" class="form-control" required />
+                        <input asp-for="EditWarehouse.Address" class="form-control" required maxlength="500" />
+                        <span asp-validation-for="EditWarehouse.Address" class="text-danger"></span>
                     </div>
                     <div class="modal-footer px-0 pb-0">
                         <button type="button" class="btn btn-outline-muted" data-bs-dismiss="modal">Cancel</button>
@@ -204,5 +226,22 @@
                 document.getElementById('EditWarehouse_Address').value = button.dataset.address || '';
             });
         });
+
+        // Automatically open modals if validation failed
+        @if (Model.ShowAddModal)
+        {
+            <text>
+            const addModal = new bootstrap.Modal(document.getElementById('addWarehouseModal'));
+            addModal.show();
+            </text>
+        }
+
+        @if (Model.ShowEditModal)
+        {
+            <text>
+            const editModal = new bootstrap.Modal(document.getElementById('editWarehouseModal'));
+            editModal.show();
+            </text>
+        }
     </script>
 }

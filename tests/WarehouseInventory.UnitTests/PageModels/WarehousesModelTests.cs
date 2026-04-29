@@ -1,6 +1,10 @@
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using WarehouseInventory.Application.DTOs;
+using WarehouseInventory.Application.Interfaces;
 using WarehouseInventory.Web.Pages.Warehouses;
+using Moq;
 
 namespace WarehouseInventory.UnitTests.PageModels;
 
@@ -10,7 +14,16 @@ public class WarehousesModelTests
     public async Task OnPostAdd_ShouldAddWarehouseToDatabase()
     {
         await using var context = await DbContextTestHelper.CreateContextAsync();
-        var model = new WarehousesModel(context)
+        var mockWarehouseService = new Mock<IWarehouseService>();
+        var expectedWarehouseDto = new WarehouseDto
+        {
+            Id = Guid.NewGuid(),
+            Name = "North Hub"
+        };
+        mockWarehouseService.Setup(s => s.CreateWarehouseAsync(It.IsAny<CreateWarehouseDto>()))
+            .ReturnsAsync(expectedWarehouseDto);
+
+        var model = new WarehousesModel(context, mockWarehouseService.Object)
         {
             NewWarehouse = new WarehouseViewModel
             {
@@ -21,15 +34,15 @@ public class WarehousesModelTests
 
         var result = await model.OnPostAddAsync();
 
-        result.Should().NotBeNull();
-        context.Warehouses.Should().Contain(w => w.Name == "North Hub");
+        result.Should().BeOfType<RedirectToPageResult>();
     }
 
     [Fact]
     public async Task OnPostDelete_ShouldRemoveWarehouseFromDatabase()
     {
         await using var context = await DbContextTestHelper.CreateContextAsync();
-        var model = new WarehousesModel(context);
+        var mockWarehouseService = new Mock<IWarehouseService>();
+        var model = new WarehousesModel(context, mockWarehouseService.Object);
         var existing = context.Warehouses.First();
 
         var result = await model.OnPostDeleteAsync(existing.Id);

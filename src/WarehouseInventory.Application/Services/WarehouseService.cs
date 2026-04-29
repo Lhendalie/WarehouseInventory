@@ -1,4 +1,5 @@
 using AutoMapper;
+using FluentValidation;
 using WarehouseInventory.Application.DTOs;
 using WarehouseInventory.Application.Interfaces;
 using WarehouseInventory.Domain.Entities;
@@ -11,12 +12,21 @@ public class WarehouseService : IWarehouseService
     private readonly IRepository<Warehouse> _warehouseRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly IValidator<CreateWarehouseDto> _createValidator;
+    private readonly IValidator<UpdateWarehouseDto> _updateValidator;
 
-    public WarehouseService(IRepository<Warehouse> warehouseRepository, IUnitOfWork unitOfWork, IMapper mapper)
+    public WarehouseService(
+        IRepository<Warehouse> warehouseRepository,
+        IUnitOfWork unitOfWork,
+        IMapper mapper,
+        IValidator<CreateWarehouseDto> createValidator,
+        IValidator<UpdateWarehouseDto> updateValidator)
     {
         _warehouseRepository = warehouseRepository;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
 
     public async Task<IEnumerable<WarehouseDto>> GetAllWarehousesAsync()
@@ -33,6 +43,13 @@ public class WarehouseService : IWarehouseService
 
     public async Task<WarehouseDto> CreateWarehouseAsync(CreateWarehouseDto dto)
     {
+        var validationResult = await _createValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+        {
+            var errorMessage = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+            throw new ArgumentException(errorMessage);
+        }
+
         var warehouse = _mapper.Map<Warehouse>(dto);
         warehouse.Id = Guid.NewGuid();
         warehouse.CreatedAt = DateTime.UtcNow;
@@ -43,6 +60,13 @@ public class WarehouseService : IWarehouseService
 
     public async Task<WarehouseDto> UpdateWarehouseAsync(UpdateWarehouseDto dto)
     {
+        var validationResult = await _updateValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+        {
+            var errorMessage = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+            throw new ArgumentException(errorMessage);
+        }
+
         var warehouse = await _warehouseRepository.GetByIdAsync(dto.Id);
         if (warehouse == null)
             throw new KeyNotFoundException($"Warehouse with ID {dto.Id} not found");

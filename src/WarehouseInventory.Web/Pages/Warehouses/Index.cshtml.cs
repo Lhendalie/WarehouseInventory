@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using WarehouseInventory.Application.DTOs;
+using WarehouseInventory.Application.Interfaces;
 using WarehouseInventory.Domain.Entities;
 using WarehouseInventory.Infrastructure.Data;
 
@@ -16,10 +18,12 @@ public class WarehouseViewModel
 public class WarehousesModel : PageModel
 {
     private readonly ApplicationDbContext _context;
+    private readonly IWarehouseService _warehouseService;
 
-    public WarehousesModel(ApplicationDbContext context)
+    public WarehousesModel(ApplicationDbContext context, IWarehouseService warehouseService)
     {
         _context = context;
+        _warehouseService = warehouseService;
     }
 
     public List<WarehouseViewModel> Warehouses { get; set; } = new();
@@ -29,6 +33,12 @@ public class WarehousesModel : PageModel
 
     [BindProperty]
     public WarehouseViewModel EditWarehouse { get; set; } = new();
+
+    [BindProperty(SupportsGet = true)]
+    public bool ShowAddModal { get; set; } = false;
+
+    [BindProperty(SupportsGet = true)]
+    public bool ShowEditModal { get; set; } = false;
 
     public Guid? SelectedWarehouseId { get; set; }
     public WarehouseViewModel? SelectedWarehouse { get; set; }
@@ -40,47 +50,48 @@ public class WarehousesModel : PageModel
 
     public async Task<IActionResult> OnPostAddAsync()
     {
-        if (!ModelState.IsValid)
+        var dto = new CreateWarehouseDto
         {
+            Name = NewWarehouse.Name,
+            Location = NewWarehouse.Address
+        };
+
+        try
+        {
+            var result = await _warehouseService.CreateWarehouseAsync(dto);
+            return RedirectToPage(new { selectedWarehouseId = result.Id });
+        }
+        catch (ArgumentException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            ShowAddModal = true;
             await LoadWarehousesAsync(SelectedWarehouseId);
             return Page();
         }
-
-        var warehouse = new Warehouse
-        {
-            Id = Guid.NewGuid(),
-            Name = NewWarehouse.Name,
-            Location = NewWarehouse.Address,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = Guid.Empty
-        };
-
-        _context.Warehouses.Add(warehouse);
-        await _context.SaveChangesAsync();
-
-        return RedirectToPage(new { selectedWarehouseId = warehouse.Id });
     }
 
     public async Task<IActionResult> OnPostEditAsync()
     {
-        if (!ModelState.IsValid)
+        var dto = new UpdateWarehouseDto
         {
+            Id = EditWarehouse.Id,
+            Name = EditWarehouse.Name,
+            Location = EditWarehouse.Address,
+            IsActive = true
+        };
+
+        try
+        {
+            await _warehouseService.UpdateWarehouseAsync(dto);
+            return RedirectToPage(new { selectedWarehouseId = EditWarehouse.Id });
+        }
+        catch (ArgumentException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            ShowEditModal = true;
             await LoadWarehousesAsync(EditWarehouse.Id);
             return Page();
         }
-
-        var existing = await _context.Warehouses.FirstOrDefaultAsync(w => w.Id == EditWarehouse.Id);
-        if (existing != null)
-        {
-            existing.Name = EditWarehouse.Name;
-            existing.Location = EditWarehouse.Address;
-            existing.UpdatedAt = DateTime.UtcNow;
-            existing.UpdatedBy = Guid.Empty;
-            await _context.SaveChangesAsync();
-        }
-
-        return RedirectToPage(new { selectedWarehouseId = EditWarehouse.Id });
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(Guid id)

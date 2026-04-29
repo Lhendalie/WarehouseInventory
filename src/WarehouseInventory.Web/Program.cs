@@ -1,8 +1,12 @@
+using AutoMapper;
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NLog.Web;
 using WarehouseInventory.Application.Interfaces;
+using WarehouseInventory.Application.Mapping;
 using WarehouseInventory.Application.Services;
+using WarehouseInventory.Application.Validators;
 using WarehouseInventory.Domain.Interfaces;
 using WarehouseInventory.Infrastructure.Data;
 using WarehouseInventory.Infrastructure.Repositories;
@@ -16,10 +20,21 @@ builder.Host.UseNLog();
 
 // Add services to the container
 builder.Services.AddRazorPages();
+builder.Services.AddSession();
 
 // Database configuration
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+var databaseMode = builder.Configuration["DatabaseMode"] ?? "PostgreSQL";
+
+if (databaseMode.Equals("InMemory", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseInMemoryDatabase("WarehouseInventoryInMemory"));
+}
+else
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+}
 
 // Identity configuration
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
@@ -57,8 +72,11 @@ builder.Services.AddScoped<IWarehouseService, WarehouseService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
+// Register FluentValidation validators
+builder.Services.AddValidatorsFromAssemblyContaining<CreateProductValidator>();
+
 // AutoMapper
-builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 var app = builder.Build();
 
@@ -80,6 +98,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 

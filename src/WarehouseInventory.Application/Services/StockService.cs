@@ -1,6 +1,8 @@
 using AutoMapper;
+using FluentValidation;
 using WarehouseInventory.Application.DTOs;
 using WarehouseInventory.Application.Interfaces;
+using WarehouseInventory.Application.Validators;
 using WarehouseInventory.Domain.Entities;
 using WarehouseInventory.Domain.Interfaces;
 
@@ -14,6 +16,7 @@ public class StockService : IStockService
     private readonly IRepository<Warehouse> _warehouseRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly CreateStockTransactionValidator _validator;
 
     public StockService(
         IRepository<ProductStock> stockRepository,
@@ -21,7 +24,8 @@ public class StockService : IStockService
         IRepository<Product> productRepository,
         IRepository<Warehouse> warehouseRepository,
         IUnitOfWork unitOfWork,
-        IMapper mapper)
+        IMapper mapper,
+        CreateStockTransactionValidator validator)
     {
         _stockRepository = stockRepository;
         _transactionRepository = transactionRepository;
@@ -29,6 +33,7 @@ public class StockService : IStockService
         _warehouseRepository = warehouseRepository;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _validator = validator;
     }
 
     public async Task<IEnumerable<ProductStockDto>> GetStockByWarehouseAsync(Guid warehouseId)
@@ -57,6 +62,13 @@ public class StockService : IStockService
 
     public async Task<StockTransactionDto> ProcessStockTransactionAsync(CreateStockTransactionDto dto, Guid userId)
     {
+        var validationResult = await _validator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
+        {
+            var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+            throw new ArgumentException($"Validation failed: {errors}");
+        }
+
         var product = await _productRepository.GetByIdAsync(dto.ProductId);
         if (product == null)
             throw new KeyNotFoundException($"Product with ID {dto.ProductId} not found");

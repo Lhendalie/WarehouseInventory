@@ -25,16 +25,22 @@ This means:
   - Product fields include group, barcode, catalogue, warehouse, type, condition, date, expiry date, and active status
   - Search and client-side filters
   - Reset filter workflow
+  - Client-side and server-side validation with FluentValidation
+  - Form validation messages displayed inline for better UX
 
 - **Warehouses Page**
   - Add, edit, and delete warehouses
   - Name and address management
   - Warehouse totals reflected on the dashboard
+  - Client-side and server-side validation with MaxLength constraints
+  - Form validation messages displayed inline for better UX
 
 - **Stock Page**
   - Warehouse filter and search
   - Stock edit modal with Stock In / Stock Out actions
   - Quantity validation and negative-stock prevention
+  - Quantity max value constraint (999,999,999)
+  - Form validation messages displayed inline instead of browser alerts
   - Filter state preserved after stock edits
 
 - **Reports Page**
@@ -124,9 +130,18 @@ WarehouseInventory.sln
 
 ## Configuration
 
+### Database Mode
+
+The application supports two database modes configured via `DatabaseMode` in `appsettings.json`:
+
+- **InMemory**: Uses EF Core InMemory database for local development (no PostgreSQL required)
+- **PostgreSQL**: Uses PostgreSQL for production (requires PostgreSQL server)
+
+Default: `InMemory` for local development, `PostgreSQL` for production.
+
 ### Database Connection
 
-Configure PostgreSQL in `src/WarehouseInventory.Web/appsettings.json`:
+For PostgreSQL mode, configure the connection in `src/WarehouseInventory.Web/appsettings.json`:
 
 ```json
 {
@@ -186,7 +201,11 @@ If email settings are not valid, expiry email actions will fail gracefully with 
 
 ## Testing Status
 
-Test projects are present in the solution, but automated test coverage should be treated as an actively evolving area alongside the current UI implementation.
+Test projects are present in the solution, with unit tests covering:
+- Page models for Products and Warehouses
+- Validators for Products, Stock Transactions, and Warehouses
+
+Automated test coverage is an actively evolving area alongside the current UI implementation.
 
 ## Known Limitations
 

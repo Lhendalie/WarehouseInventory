@@ -61,7 +61,7 @@
 
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Product List (@Model.Products.Count items)</span>
+        <span>Product List (@Model.TotalItems items)</span>
         <button type="button" class="btn btn-sm btn-outline-muted" id="resetFiltersBtn">Reset Filter</button>
     </div>
     <div class="card-body p-0">
@@ -71,14 +71,50 @@
                 <table class="table mb-0">
                     <thead>
                         <tr>
-                            <th>Code</th>
-                            <th>Name</th>
-                            <th>Warehouse</th>
-                            <th>Type</th>
-                            <th>Condition</th>
-                            <th>Date</th>
-                            <th>Expiry</th>
-                            <th>Status</th>
+                            @if (Model.ShowProductCode)
+                            {
+                                <th>Code</th>
+                            }
+                            @if (Model.ShowProductName)
+                            {
+                                <th>Name</th>
+                            }
+                            @if (Model.ShowWarehouse)
+                            {
+                                <th>Warehouse</th>
+                            }
+                            @if (Model.ShowType)
+                            {
+                                <th>Type</th>
+                            }
+                            @if (Model.ShowCondition)
+                            {
+                                <th>Condition</th>
+                            }
+                            @if (Model.ShowGroup)
+                            {
+                                <th>Group</th>
+                            }
+                            @if (Model.ShowDate)
+                            {
+                                <th>Date</th>
+                            }
+                            @if (Model.ShowCatalogue)
+                            {
+                                <th>Catalogue</th>
+                            }
+                            @if (Model.ShowBarcode)
+                            {
+                                <th>Barcode</th>
+                            }
+                            @if (Model.ShowExpiryDate)
+                            {
+                                <th>Expiry</th>
+                            }
+                            @if (Model.ShowStatus)
+                            {
+                                <th>Status</th>
+                            }
                             <th style="width: 100px;">Actions</th>
                         </tr>
                     </thead>
@@ -102,51 +138,87 @@
                                 data-type="@(product.Type ?? string.Empty)"
                                 data-status="@(product.IsActive ? "active" : "inactive")"
                                 data-expiry="@expiryState">
-                                <td>
-                                    <a asp-page="./Index" asp-route-selectedProductId="@product.Id" class="text-decoration-none" style="color: var(--text-primary); font-weight: 600;">
-                                        @product.ProductCode
-                                    </a>
-                                </td>
-                                <td>
-                                    <a asp-page="./Index" asp-route-selectedProductId="@product.Id" class="text-decoration-none" style="color: var(--text-primary);">
-                                        @product.ProductName
-                                    </a>
-                                </td>
-                                <td>@product.Warehouse</td>
-                                <td>@product.Type</td>
-                                <td>@product.Condition</td>
-                                <td>@product.Date.ToString("yyyy-MM-dd")</td>
-                                <td>
-                                    @if (product.ExpiryDate.HasValue)
-                                    {
-                                        if (daysUntilExpiry < 0)
+                                @if (Model.ShowProductCode)
+                                {
+                                    <td>
+                                        <a asp-page="./Index" asp-route-selectedProductId="@product.Id" class="text-decoration-none" style="color: var(--text-primary); font-weight: 600;">
+                                            @product.ProductCode
+                                        </a>
+                                    </td>
+                                }
+                                @if (Model.ShowProductName)
+                                {
+                                    <td>
+                                        <a asp-page="./Index" asp-route-selectedProductId="@product.Id" class="text-decoration-none" style="color: var(--text-primary);">
+                                            @product.ProductName
+                                        </a>
+                                    </td>
+                                }
+                                @if (Model.ShowWarehouse)
+                                {
+                                    <td>@product.Warehouse</td>
+                                }
+                                @if (Model.ShowType)
+                                {
+                                    <td>@product.Type</td>
+                                }
+                                @if (Model.ShowCondition)
+                                {
+                                    <td>@product.Condition</td>
+                                }
+                                @if (Model.ShowGroup)
+                                {
+                                    <td>@product.Group</td>
+                                }
+                                @if (Model.ShowDate)
+                                {
+                                    <td>@product.Date.ToString("yyyy-MM-dd")</td>
+                                }
+                                @if (Model.ShowCatalogue)
+                                {
+                                    <td>@product.Catalogue</td>
+                                }
+                                @if (Model.ShowBarcode)
+                                {
+                                    <td>@product.Barcode</td>
+                                }
+                                @if (Model.ShowExpiryDate)
+                                {
+                                    <td>
+                                        @if (product.ExpiryDate.HasValue)
                                         {
-                                            <span class="badge badge-soft-danger">Expired</span>
-                                        }
-                                        else if (daysUntilExpiry <= 7)
-                                        {
-                                            <span class="badge badge-soft-warning">@product.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                            if (daysUntilExpiry < 0)
+                                            {
+                                                <span class="badge badge-soft-danger">Expired</span>
+                                            }
+                                            else if (daysUntilExpiry <= 7)
+                                            {
+                                                <span class="badge badge-soft-warning">@product.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                            }
+                                            else
+                                            {
+                                                <span>@product.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                            }
                                         }
                                         else
                                         {
-                                            <span>@product.ExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                            <span class="text-muted">-</span>
                                         }
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">-</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (product.IsActive)
-                                    {
-                                        <span class="badge badge-soft-success">Active</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge badge-soft-neutral">Inactive</span>
-                                    }
-                                </td>
+                                    </td>
+                                }
+                                @if (Model.ShowStatus)
+                                {
+                                    <td>
+                                        @if (product.IsActive)
+                                        {
+                                            <span class="badge badge-soft-success">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-soft-neutral">Inactive</span>
+                                        }
+                                    </td>
+                                }
                                 <td>
                                     <div class="d-flex gap-2">
                                         <button type="button"
@@ -186,6 +258,36 @@
                     </tbody>
                 </table>
             </div>
+            @if (Model.TotalPages > 1)
+            {
+                <div class="card-body">
+                    <nav>
+                        <ul class="pagination mb-0 justify-content-center">
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Page("/Products/Index", new { selectedProductId = Model.SelectedProductId, currentPageParam = Model.CurrentPage - 1 })">Previous</a>
+                                </li>
+                            }
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(Model.CurrentPage == i ? "active" : "")">
+                                    <a class="page-link" href="@Url.Page("/Products/Index", new { selectedProductId = Model.SelectedProductId, currentPageParam = i })">@i</a>
+                                </li>
+                            }
+                            @if (Model.CurrentPage < Model.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Page("/Products/Index", new { selectedProductId = Model.SelectedProductId, currentPageParam = Model.CurrentPage + 1 })">Next</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                    <div class="text-center mt-2 text-muted">
+                        Showing @((Model.CurrentPage - 1) * Model.ItemsPerPage + 1) to @Math.Min(Model.CurrentPage * Model.ItemsPerPage, Model.TotalItems) of @Model.TotalItems items (Page @Model.CurrentPage of @Model.TotalPages)
+                    </div>
+                </div>
+            }
         }
         else
         {
@@ -287,18 +389,29 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                @if (!ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        @foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <p>@error.ErrorMessage</p>
+                        }
+                    </div>
+                }
                 <form method="post" asp-page-handler="Add">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="NewProduct.ProductCode" class="form-label">Product Code *</label>
-                                <input asp-for="NewProduct.ProductCode" class="form-control" required />
+                                <input asp-for="NewProduct.ProductCode" class="form-control" required maxlength="50" pattern="[A-Za-z0-9\-]+" title="Product code must contain only letters, numbers, and hyphens" />
+                                <span asp-validation-for="NewProduct.ProductCode" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="NewProduct.ProductName" class="form-label">Product Name *</label>
-                                <input asp-for="NewProduct.ProductName" class="form-control" required />
+                                <input asp-for="NewProduct.ProductName" class="form-control" required maxlength="200" />
+                                <span asp-validation-for="NewProduct.ProductName" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
@@ -306,13 +419,15 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="NewProduct.Group" class="form-label">Group</label>
-                                <input asp-for="NewProduct.Group" class="form-control" />
+                                <input asp-for="NewProduct.Group" class="form-control" maxlength="100" />
+                                <span asp-validation-for="NewProduct.Group" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="NewProduct.Barcode" class="form-label">Barcode</label>
-                                <input asp-for="NewProduct.Barcode" class="form-control" />
+                                <input asp-for="NewProduct.Barcode" class="form-control" maxlength="50" />
+                                <span asp-validation-for="NewProduct.Barcode" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
@@ -320,13 +435,15 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="NewProduct.Warehouse" class="form-label">Warehouse</label>
-                                <input asp-for="NewProduct.Warehouse" class="form-control" />
+                                <input asp-for="NewProduct.Warehouse" class="form-control" maxlength="100" />
+                                <span asp-validation-for="NewProduct.Warehouse" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="NewProduct.Catalogue" class="form-label">Catalogue</label>
-                                <input asp-for="NewProduct.Catalogue" class="form-control" />
+                                <input asp-for="NewProduct.Catalogue" class="form-control" maxlength="50" />
+                                <span asp-validation-for="NewProduct.Catalogue" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
@@ -334,13 +451,15 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="NewProduct.Type" class="form-label">Type</label>
-                                <input asp-for="NewProduct.Type" class="form-control" />
+                                <input asp-for="NewProduct.Type" class="form-control" maxlength="50" />
+                                <span asp-validation-for="NewProduct.Type" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="NewProduct.Condition" class="form-label">Condition</label>
-                                <input asp-for="NewProduct.Condition" class="form-control" />
+                                <input asp-for="NewProduct.Condition" class="form-control" maxlength="50" />
+                                <span asp-validation-for="NewProduct.Condition" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
@@ -349,12 +468,14 @@
                             <div class="mb-3">
                                 <label asp-for="NewProduct.Date" class="form-label">Date</label>
                                 <input asp-for="NewProduct.Date" type="date" class="form-control" />
+                                <span asp-validation-for="NewProduct.Date" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="NewProduct.ExpiryDate" class="form-label">Expiry Date</label>
                                 <input asp-for="NewProduct.ExpiryDate" type="date" class="form-control" />
+                                <span asp-validation-for="NewProduct.ExpiryDate" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
@@ -572,5 +693,14 @@
             if (filterExpiry) filterExpiry.value = '';
             applyFilters();
         });
+
+        // Open modal if ShowAddModal is true (validation error occurred)
+        @if (Model.ShowAddModal)
+        {
+            <text>
+            const addModal = new bootstrap.Modal(document.getElementById('addProductModal'));
+            addModal.show();
+            </text>
+        }
     </script>
 }

@@ -1,10 +1,15 @@
 # User Guide
 
 ## Overview
-
+ 
 Warehouse Inventory System provides a demo-ready interface for managing products, warehouses, stock quantities, dashboard metrics, and reports.
-
-The current implementation uses a PostgreSQL database through Entity Framework Core for the main UI workflows. Changes made through the interface are persisted when the application can connect to the configured database.
+ 
+The application supports two database modes:
+ 
+- **InMemory mode**: Uses EF Core InMemory database for local development without requiring PostgreSQL
+- **PostgreSQL mode**: Uses a PostgreSQL database for production deployment with persistent storage
+ 
+By default, the Development environment uses InMemory mode, and Production uses PostgreSQL mode.
 
 ## Dashboard
 
@@ -153,22 +158,41 @@ Available filters:
 - Export respects the current report type and active filters
 
 ## Data Persistence Behavior
-
-The current application now persists operational data in the configured database.
-
+ 
+The application's data persistence depends on the configured database mode.
+ 
+### InMemory Mode (Development)
+ 
+- Data is stored in an in-memory database that exists only while the application is running
+- Changes made through the interface are reflected immediately while the app is running
+- Restarting the application resets all data to seeded demo values
+- No PostgreSQL server is required
+- Suitable for local development, testing, and UI iteration without database setup
+ 
+### PostgreSQL Mode (Production)
+ 
+- Data is persisted in a PostgreSQL database
+- Changes made through the interface are permanently stored
+- Restarting the application preserves all data
+- Requires a configured and reachable PostgreSQL server
+- Suitable for production deployment with persistent storage
+ 
 ### Startup Behavior
-
-- On first startup against an empty database, the app initializes schema and seeds demo data
-- If the configured PostgreSQL database is unavailable, the application cannot complete normal startup
-
+ 
+- InMemory mode: The app seeds demo data on every startup
+- PostgreSQL mode: The app initializes schema and seeds demo data on first startup against an empty database
+- PostgreSQL mode: If the database is unavailable, the application cannot complete normal startup
+ 
 ### While the Application Is Running
-
-- Additions, edits, and deletions are persisted to the database
-- Dashboard and reports update from the same persisted records used by the main pages
+ 
+- InMemory mode: Additions, edits, and deletions are reflected immediately but reset on restart
+- PostgreSQL mode: Additions, edits, and deletions are persisted permanently
+- Dashboard and reports update from the same data source used by the main pages
 
 ## Known Limitations
 
-- Main UI CRUD flows require a reachable PostgreSQL database
+- PostgreSQL mode requires a reachable PostgreSQL server
+- InMemory mode data resets on application restart
 - Products page CSV export is not available
 - Reports PDF export is not implemented
 - A real PostgreSQL environment should still be validated outside the current local IDE workflow

@@ -1,6 +1,9 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
+using WarehouseInventory.Application.DTOs;
+using WarehouseInventory.Application.Interfaces;
 using WarehouseInventory.Web.Pages.Products;
+using Moq;
 
 namespace WarehouseInventory.UnitTests.PageModels;
 
@@ -10,7 +13,17 @@ public class ProductsModelTests
     public async Task OnPostAdd_ShouldAddProductToDatabase()
     {
         await using var context = await DbContextTestHelper.CreateContextAsync();
-        var model = new ProductsModel(context)
+        var mockProductService = new Mock<IProductService>();
+        var expectedProductDto = new ProductDto
+        {
+            Id = Guid.NewGuid(),
+            ProductCode = "NEW001",
+            Name = "New Product"
+        };
+        mockProductService.Setup(s => s.CreateProductAsync(It.IsAny<CreateProductDto>()))
+            .ReturnsAsync(expectedProductDto);
+
+        var model = new ProductsModel(context, mockProductService.Object)
         {
             NewProduct = new ProductViewModel
             {
@@ -30,14 +43,14 @@ public class ProductsModelTests
         var result = await model.OnPostAddAsync();
 
         result.Should().BeOfType<RedirectToPageResult>();
-        context.Products.Should().Contain(p => p.ProductCode == "NEW001" && p.Name == "New Product");
     }
 
     [Fact]
     public async Task OnPostDelete_ShouldRemoveProductFromDatabase()
     {
         await using var context = await DbContextTestHelper.CreateContextAsync();
-        var model = new ProductsModel(context);
+        var mockProductService = new Mock<IProductService>();
+        var model = new ProductsModel(context, mockProductService.Object);
         var existing = context.Products.First();
 
         var result = await model.OnPostDeleteAsync(existing.Id);

@@ -129,6 +129,9 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div id="stockValidationErrors" class="alert alert-danger" style="display: none;">
+                    <ul id="stockErrorList"></ul>
+                </div>
                 <div class="mb-3">
                     <label class="form-label text-muted">Product</label>
                     <div id="modalProductInfo" class="fw-semibold"></div>
@@ -149,11 +152,13 @@
                         <option value="in">Stock In</option>
                         <option value="out">Stock Out</option>
                     </select>
+                    <span id="stockActionError" class="text-danger"></span>
                 </div>
                 <div class="mb-3" id="quantityInputGroup" style="display: none;">
                     <label class="form-label" id="quantityLabel">Quantity</label>
-                    <input type="number" class="form-control" id="stockQuantity" min="1" value="1" />
-                    <small class="text-muted">Minimum quantity: 1</small>
+                    <input type="number" class="form-control" id="stockQuantity" min="1" max="999999999" value="1" />
+                    <small class="text-muted">Minimum quantity: 1, Maximum quantity: 999,999,999</small>
+                    <span id="stockQuantityError" class="text-danger"></span>
                 </div>
             </div>
             <div class="modal-footer px-0 pb-0">
@@ -252,24 +257,55 @@
             } else {
                 quantityInputGroup.style.display = 'none';
             }
+            // Clear validation errors
+            document.getElementById('stockActionError').textContent = '';
+            document.getElementById('stockQuantityError').textContent = '';
+            document.getElementById('stockValidationErrors').style.display = 'none';
         });
 
         submitStockActionBtn.addEventListener('click', function() {
             const action = stockActionSelect.value;
             const quantity = parseInt(stockQuantityInput.value);
+            const errorList = document.getElementById('stockErrorList');
+            const validationErrors = document.getElementById('stockValidationErrors');
+            const stockActionError = document.getElementById('stockActionError');
+            const stockQuantityError = document.getElementById('stockQuantityError');
+
+            // Clear previous errors
+            errorList.innerHTML = '';
+            validationErrors.style.display = 'none';
+            stockActionError.textContent = '';
+            stockQuantityError.textContent = '';
+
+            let errors = [];
 
             if (!action) {
-                alert('Please select an action.');
-                return;
+                stockActionError.textContent = 'Please select an action.';
+                errors.push('Please select an action.');
             }
 
             if (isNaN(quantity) || quantity < 1) {
-                alert('Quantity must be at least 1.');
-                return;
+                stockQuantityError.textContent = 'Quantity must be at least 1.';
+                errors.push('Quantity must be at least 1.');
+            }
+
+            if (quantity > 999999999) {
+                stockQuantityError.textContent = 'Quantity cannot exceed 999,999,999.';
+                errors.push('Quantity cannot exceed 999,999,999.');
             }
 
             if (action === 'out' && quantity > currentQuantity) {
-                alert('Cannot dispatch more than available stock.');
+                stockQuantityError.textContent = 'Cannot dispatch more than available stock.';
+                errors.push('Cannot dispatch more than available stock.');
+            }
+
+            if (errors.length > 0) {
+                errors.forEach(error => {
+                    const li = document.createElement('li');
+                    li.textContent = error;
+                    errorList.appendChild(li);
+                });
+                validationErrors.style.display = 'block';
                 return;
             }
 
